@@ -1,0 +1,30 @@
+# Core dependencies for Compliance Questionnaire project
+# Python 3.8+ required
+
+# Data manipulation and analysis
+pandas>=2.0.0,<3.0.0
+numpy>=1.21.0,<2.0.0
+
+# OpenAI API client (v1.0+ required for chat.completions.create)
+openai>=1.0.0,<2.0.0
+
+# HTTP client for API requests (used by OpenAI client)
+httpx>=0.24.0,<1.0.0
+
+# Environment variable management
+python-dotenv>=1.0.0,<2.0.0
+
+# Testing and development dependencies
+# Note: numpy is also used in tests for NaN value testing
+# pytest is optional - can use built-in unittest instead
+pytest>=7.0.0,<8.0.0  # Optional: for enhanced test running
+
+# Standard library modules (included with Python, no installation needed):
+# - json: Built-in JSON handling
+# - re: Regular expressions  
+# - unicodedata: Unicode character database
+# - os: Operating system interface
+# - sys: System-specific parameters and functions
+# - unittest: Built-in unit testing framework
+# - unittest.mock: Built-in mocking for tests (Python 3.3+)
+# - tempfile: Built-in temporary file creation
