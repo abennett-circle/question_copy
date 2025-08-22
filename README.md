@@ -97,12 +97,12 @@ Question,Answer
 ## 📈 Output
 
 The tool generates a CSV file with:
-- **Question ID** - Row number from original file
+- **Question ID** - Row number from the reference file
 - **Current Question** - Question from unanswered file
 - **Current Answer** - Answer from unanswered file
-- **Matched Question** - Best matching question from reference
+- **Matched Question** - Best matching question from reference file for each question in the unanswered file.
 - **Matched Answer** - Answer from reference questionnaire
-- **Question Match Score** - Similarity score (0.0-1.0)
+- **Question Match Score** - Question similarity score (0.0-1.0)
 - **Answer Match Score** - Answer similarity score (0.0-1.0)
 
 ## ⚡ Examples
@@ -196,4 +196,4 @@ Compliance_Questionnaire/
 4. **Compares** answers between matched questions
 5. **Generates** a combined CSV with all results for review
 
-Ready to streamline your compliance questionnaire process! 🚀
+Ready to streamline your questionnaire merging process! 🚀
