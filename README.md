@@ -52,7 +52,7 @@ python question_copy.py <reference_file> <unanswered_file> \
   --unans-answer-col "Answer - Full"
 ```
 
-**Basic usage structure:**
+**Python Notebook:**
 There is also a Python Notebook for those who prefer running operations through them. The basic workflow of questionnaire filling is listed in "question_copy_notebook_version.ipynb"
 
 ### Arguments
