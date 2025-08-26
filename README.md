@@ -14,6 +14,13 @@ Please report any issues with this software to Austin Bennett (austin.bennett@ci
 ### Installation
 
 1. **Install dependencies:**
+   We recommend you create a virtual environment:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+
+   Then install requirements:
    ```bash
    pip install -r requirements.txt
    ```
@@ -29,6 +36,30 @@ Please report any issues with this software to Austin Bennett (austin.bennett@ci
    python question_copy.py data/Mock_Reference.csv data/Mock_Unanswered.csv
    ```
 
+**Troubleshooting.**
+If you get a connection error, this means you have to setup your Zscaler certificates:
+
+```bash
+# Check that you have Zscaler certificates installed
+if [ -z "$(security find-certificate -p -c 'Zscaler Root CA')" ]; then  
+  echo "Certificate does not exist. Please contact IT"  
+  exit 1
+else  
+  mkdir $HOME/.certs &> /dev/null
+  security find-certificate -p -c "Zscaler Root CA" > $HOME/.certs/zscaler_root_ca.pem
+fi
+
+# Install certifi
+pip3 install certifi \
+  && cat $HOME/.certs/zscaler_root_ca.pem >> $(python3 -m certifi) \
+  && pip3 config set global.cert $(python3 -m certifi)
+
+export CERT_PATH=$(python -m certifi)
+export CURL_CA_BUNDLE=${CERT_PATH}
+export REQUESTS_CA_BUNDLE=${CERT_PATH}
+export SSL_CERT_FILE=${CERT_PATH}
+```
+
 ## 📋 Usage
 
 ### Command Line Interface
@@ -40,7 +71,7 @@ python question_copy.py <reference_file> <unanswered_file>
 
 **With custom output:**
 ```bash
-python question_copy.py <reference_file> <unanswered_file> --output results.csv
+python question_copy.py <reference_file> <unanswered_file> --output results.xlsx
 ```
 
 **With custom column names:**
@@ -66,7 +97,7 @@ There is also a Python Notebook for those who prefer running operations through 
 - `--ref-answer-col` - Reference answer column (default: "Answer")
 - `--unans-question-col` - Unanswered question column (default: "Question")
 - `--unans-answer-col` - Unanswered answer column (default: "Answer")
-- `--output` - Output file name (default: "combined_questionnaire.csv")
+- `--output` - Output file name (default: "combined_questionnaire.xlsx")
 - `--skip-config-check` - Skip config validation (for testing)
 
 ### Configuration
@@ -96,14 +127,22 @@ Question,Answer
 
 ## 📈 Output
 
-The tool generates a CSV file with:
-- **Question ID** - Row number from the reference file
+The tool generates an Excel file (.xlsx) with the following data:
+
+### Output Columns
 - **Current Question** - Question from unanswered file
+- **Matched Question** - Best matching question from reference file
+- **Matched Question Row** - Row number from the reference file
+- **Question Match Score** - Question similarity score (0.0-1.0). Scores below threshold 0.85 marked as unreliable.
 - **Current Answer** - Answer from unanswered file
-- **Matched Question** - Best matching question from reference file for each question in the unanswered file.
 - **Matched Answer** - Answer from reference questionnaire
-- **Question Match Score** - Question similarity score (0.0-1.0)
-- **Answer Match Score** - Answer similarity score (0.0-1.0)
+- **Answer Match Score** - Answer similarity score (0.0-1.0). Scores below threshold 0.85 marked as unreliable.
+
+### File Format Support
+- **Excel format (.xlsx)** - Default output format
+- **CSV format (.csv)** - Available for compatibility
+
+
 
 ## ⚡ Examples
 
@@ -114,6 +153,10 @@ python question_copy.py data/Mock_Reference.csv data/Mock_Unanswered.csv
 
 ### Example 2: Custom Output File
 ```bash
+# Excel format with visual formatting (recommended)
+python question_copy.py data/Mock_Reference.csv data/Mock_Unanswered.csv --output my_results.xlsx
+
+# CSV format for compatibility
 python question_copy.py data/Mock_Reference.csv data/Mock_Unanswered.csv --output my_results.csv
 ```
 
@@ -124,7 +167,7 @@ python question_copy.py data/Mock_Reference.csv data/Mock_Unanswered.csv \
   --ref-answer-col "Answer - Full" \
   --unans-question-col "Question - Full" \
   --unans-answer-col "Answer - Full" \
-  --output custom_results.csv
+  --output custom_results.xlsx
 ```
 
 ### Example 4: Testing Mode
@@ -194,6 +237,6 @@ Compliance_Questionnaire/
 2. **Matches** questions using exact matching and AI-powered semantic analysis
 3. **Scores** question similarity (70% threshold for matching)
 4. **Compares** answers between matched questions
-5. **Generates** a combined CSV with all results for review
+5. **Generates** an Excel file with all results for review
 
 Ready to streamline your questionnaire merging process! 🚀
