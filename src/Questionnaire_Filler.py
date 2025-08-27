@@ -14,6 +14,7 @@ import json
 import os
 from dotenv import load_dotenv
 import pandas as pd
+from openpyxl.styles import PatternFill, Alignment
 
 ################################################################################
 # Questionnaire Filler Class
@@ -56,7 +57,8 @@ class Questionnaire_Filler(object):
                        unanswered_answer_col,
                        default_model="gpt-4o",
                        ai_url=None,
-                       api_key=None):
+                       api_key=None,
+                       accuracy_threshold=0.85):
         
         # Load environment variables - try multiple paths
         config_paths = ['config.env', '../config.env', './config.env']
@@ -68,8 +70,7 @@ class Questionnaire_Filler(object):
         # Set AI credentials from environment or parameters
         self.ai_url = ai_url or os.getenv('CHATAI_BASE_URL')
         self.api_key = api_key or os.getenv('CHATAI_API_KEY')
-        self.default_model = default_model
-        
+        self.default_model = default_model    
         # Creates questionnaire objects
         self.reference_questionnaire = Reference_Questionnaire(
             file_path=reference_file_name,
@@ -89,6 +90,9 @@ class Questionnaire_Filler(object):
             self.ai_client = self._build_ai_client(self.ai_url, self.api_key)
         else:
             raise ValueError("AI URL and API key must be provided either as parameters or in config.env file")
+
+        # set the accuracy threshold
+        self.accuracy_threshold = accuracy_threshold
 
 
 
@@ -275,6 +279,7 @@ class Questionnaire_Filler(object):
             arr_content=question_payload
         )
 
+
         # Gets the response content
         resp_content = response.choices[0].message.content
         
@@ -282,11 +287,10 @@ class Questionnaire_Filler(object):
         try:
             # Parse the JSON response directly (OpenAI's JSON mode ensures valid JSON)
             response_data = json.loads(resp_content)
-            
             # Extract the matches array from the structured response
             matches_array = response_data.get("matches", [])
-                
             print(f"Successfully parsed {len(matches_array)} question matches")
+
             return matches_array
         
         # Errors if the JSON returned by the AI cleint is not valid
@@ -297,6 +301,7 @@ class Questionnaire_Filler(object):
         except Exception as e:
             print(f"Unexpected error during response processing: {e}")
             print(f"Error type: {type(e).__name__}")
+            print(f"Error message: {e}")
             return []
     
 
@@ -519,12 +524,17 @@ class Questionnaire_Filler(object):
     
 
 
-    """Fills the best matches from the reference questionnaire.
+    """Generates a combined questionnaire with conditional formatting for low match scores.
+        
+        Args:
+            output_file_name (str): Output file name. Should end with .xlsx for Excel format with styling.
+            If not specified, defaults to "combined_questionnaire.xlsx". If the specified file name ends with .csv,
+            it will be saved as a CSV file without styling.
         
         Returns:
-            best_matches (list): The best matches.
+            None: Saves the combined questionnaire to the specified file.
     """
-    def generate_combined_questionnaire(self, output_file_name="combined_questionnaire.csv"):
+    def generate_combined_questionnaire(self, output_file_name="combined_questionnaire.xlsx"):
 
         # Creates a list to store the rows for the combined questionnaire
         combined_questionnaire_rows = []
@@ -557,20 +567,72 @@ class Questionnaire_Filler(object):
 
             # Adds the question and answer data to the rows list
             combined_questionnaire_rows.append({
-                "Question ID": question_id,
                 "Current Question": current_question, 
-                "Current Answer": current_answer, 
                 "Matched Question": last_question, 
-                "Matched Answer": last_answer, 
+                "Matched Question Row": question_id,
                 "Question Match Score": question_match_score,
+                "Current Answer": current_answer, 
+                "Matched Answer": last_answer, 
                 "Answer Match Score": answer_match_score
             })
             
         # Creates the combined questionnaire DataFrame from the collected rows
         combined_questionnaire = pd.DataFrame(combined_questionnaire_rows)
-            
-        # Saves the combined questionnaire to a CSV file
-        combined_questionnaire.to_csv(output_file_name, index=False)
+        
+        # Check if output should be Excel format (for styling) or CSV
+        if output_file_name.lower().endswith('.xlsx'):
+            # Save to Excel with conditional formatting
+            with pd.ExcelWriter(output_file_name, engine='openpyxl') as writer:
+                combined_questionnaire.to_excel(writer, sheet_name='Combined Questionnaire', index=False)
+                
+                # Get the workbook and worksheet objects
+                workbook = writer.book
+                worksheet = writer.sheets['Combined Questionnaire']
+                
+                # Define pink fill for cells with scores < self.accuracy_threshold
+                pink_fill = PatternFill(start_color='FFC0CB', end_color='FFC0CB', fill_type='solid')
+                
+                # Define text wrapping alignment
+                wrap_alignment = Alignment(wrap_text=True, vertical='top')
+                
+                # Set column widths and formatting
+                # Column mapping: A=Current Question, B=Matched Question, C=Matched Question Row, 
+                # D=Question Match Score, E=Current Answer, F=Matched Answer, G=Answer Match Score
+                text_columns = ['A', 'B', 'E', 'F']  # Text columns that need wider width and wrapping
+                number_columns = ['C', 'D', 'G']     # Number columns (question ID and scores)
+                
+                # Set width and wrapping for text columns
+                for col in text_columns:
+                    worksheet.column_dimensions[col].width = 30
+                    # Apply text wrapping to all cells in text columns
+                    for row_idx in range(1, len(combined_questionnaire) + 2):  # Include header row
+                        cell = worksheet.cell(row=row_idx, column=ord(col) - ord('A') + 1)
+                        cell.alignment = wrap_alignment
+                
+                # Set appropriate width for number columns and apply wrapping
+                for col in number_columns:
+                    worksheet.column_dimensions[col].width = 12
+                    # Apply text wrapping to all cells in number columns
+                    for row_idx in range(1, len(combined_questionnaire) + 2):  # Include header row
+                        cell = worksheet.cell(row=row_idx, column=ord(col) - ord('A') + 1)
+                        cell.alignment = wrap_alignment
+                
+                # Apply conditional formatting to Question Match Score column (column D, index 4)
+                question_score_col = 4  # 1-indexed (D column)
+                for row_idx in range(2, len(combined_questionnaire) + 2):  # Start from row 2 (after header)
+                    cell = worksheet.cell(row=row_idx, column=question_score_col)
+                    if cell.value is not None and isinstance(cell.value, (int, float)) and cell.value < self.accuracy_threshold:
+                        cell.fill = pink_fill
+                
+                # Apply conditional formatting to Answer Match Score column (column G, index 7)
+                answer_score_col = 7  # 1-indexed (G column)
+                for row_idx in range(2, len(combined_questionnaire) + 2):  # Start from row 2 (after header)
+                    cell = worksheet.cell(row=row_idx, column=answer_score_col)
+                    if cell.value is not None and isinstance(cell.value, (int, float)) and cell.value < self.accuracy_threshold:
+                        cell.fill = pink_fill
+        else:
+            # Save as CSV (no styling possible)
+            combined_questionnaire.to_csv(output_file_name, index=False)
             
         # Alerts the user that the combined questionnaire has been saved
         print(f"Combined questionnaire has been saved to {output_file_name}!")

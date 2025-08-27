@@ -27,7 +27,7 @@ Optional Arguments:
     --ref-answer-col        Reference questionnaire answer column (default: "Answer") 
     --unans-question-col    Unanswered questionnaire question column (default: "Question")
     --unans-answer-col      Unanswered questionnaire answer column (default: "Answer")
-    --output               Output file name (default: "combined_questionnaire.csv")
+    --output               Output file name (default: "combined_questionnaire.xlsx")
     --skip-config-check    Skip config file validation (for testing purposes)
     --help                 Show this help message
 
@@ -91,8 +91,7 @@ def validate_config():
         else:
             # Mask sensitive values in output
             if 'KEY' in var:
-                masked_value = value[:8] + '...' + value[-4:] if len(value) > 12 else '***masked***'
-                print(f"✅ {var}: {masked_value}")
+                print(f"✅ {var}: {len(value)} characters")
             else:
                 print(f"✅ {var}: {value}")
     
@@ -141,8 +140,8 @@ def main():
                        default='Answer',
                        help='Unanswered questionnaire answer column (default: "Answer")')
     parser.add_argument('--output',
-                       default='combined_questionnaire.csv',
-                       help='Output file name (default: "combined_questionnaire.csv")')
+                       default='combined_questionnaire.xlsx',
+                       help='Output file name (default: "combined_questionnaire.xlsx")')
     parser.add_argument('--skip-config-check',
                        action='store_true',
                        help='Skip config file validation (for testing purposes)')
@@ -235,6 +234,7 @@ def main():
         print(f"❌ Unexpected Error: {e}")
         print("💡 Tip: Check your input files and column names")
         print("💡 Tip: Check your API Key and URL in the config.env file are correct. These regenerate every so often!")
+        print(f"Error message: {e.message}")
         sys.exit(1)
 
 # Main function to run the script

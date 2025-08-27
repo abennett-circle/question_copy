@@ -15,6 +15,9 @@ httpx>=0.24.0,<1.0.0
 # Environment variable management
 python-dotenv>=1.0.0,<2.0.0
 
+# Excel file handling with styling support
+openpyxl>=3.0.0,<4.0.0
+
 # Standard library modules (included with Python, no installation needed):
 # - json: Built-in JSON handling
 # - re: Regular expressions  
