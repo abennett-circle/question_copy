@@ -1,0 +1,26 @@
+# Production dependencies for Compliance Questionnaire project
+# Python 3.8+ required
+
+# Core runtime dependencies only (no testing/development packages)
+
+# Data manipulation and analysis
+pandas>=2.0.0,<3.0.0
+
+# OpenAI API client (v1.0+ required for chat.completions.create)
+openai>=1.0.0,<2.0.0
+
+# HTTP client for API requests (used by OpenAI client)
+httpx>=0.24.0,<1.0.0
+
+# Environment variable management
+python-dotenv>=1.0.0,<2.0.0
+
+# Excel file handling with styling support
+openpyxl>=3.0.0,<4.0.0
+
+# Standard library modules (included with Python, no installation needed):
+# - json: Built-in JSON handling
+# - re: Regular expressions  
+# - unicodedata: Unicode character database
+# - os: Operating system interface
+# - sys: System-specific parameters and functions
